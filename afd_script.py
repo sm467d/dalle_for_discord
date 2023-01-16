@@ -2,32 +2,14 @@ import discord
 import openai
 from discord.ext import commands
 
-tkn = "token"
-openai.api_key = "key"
+tkn = "TOKEN"
+openai.api_key = "KEY"
 client = discord.Client(intents=discord.Intents.all())
 commands = {
     "help": "shows all commands",
     "gu" : "generates unique image with GPT based prompt",
     "gp [prompt]" : "generates image based on user prompt" 
 }
-
-@client.event
-async def on_ready():
-    await client.change_presence(status=discord.Status.online)
-    print("AFD has connected to Discord")
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    if message.content.startswith("!afd"): # command listener
-        ret = process_command(message.content)
-        if ret[0] == 0:
-            await message.channel.send(ret[1])
-        else:
-            image = get_image(ret[1])
-            await message.channel.send(image)
-
 
 def process_command(content):
     '''
@@ -44,7 +26,7 @@ def process_command(content):
     command = content.lstrip("!afd ")
     ret = [0]
 
-    if command == "help" or "?":
+    if command in ("help", "?"):
         ret.append("Apollo DALL-E Commands (!afd [command]):")
 
     elif command == "gu": # generate random art image - returns a unique prompt
@@ -59,5 +41,41 @@ def process_command(content):
         ret.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!afd help\" for a list of all commands.")
     
     return ret
+
+
+def get_image(prompt):
+    '''
+    Prompts GPT for an image
+
+    Args:
+        prompt (str): image generation prompt
+
+    Returns:
+        image (discord.File): the image file
+    '''
+    response = openai.Image.create(prompt=prompt, model="image-alpha-001")
+    url = response.data.url
+    image = discord.File(url)
+    return image
+
+    
+@client.event
+async def on_ready():
+    await client.change_presence(status=discord.Status.online)
+    print("AFD has connected to Discord")
+
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+    if message.content.startswith("!afd"): # command listener
+        ret = process_command(message.content)
+        if ret[0] == 0:
+            await message.channel.send(ret[1])
+        else:
+            image = get_image(ret[1])
+            await message.channel.send(image)
+
 
 client.run(tkn)
