@@ -29,7 +29,8 @@ def process_command(content):
     ret = [0]
 
     if command in ("help", "?"):
-        ret.append("Apollo DALL-E Commands (!afd [command]):")
+        ret.append("Apollo DALL-E Commands (!afd [command]):\n\t\"gu\" : Generates a unique image using an AI generated prompt\
+            \n\t\"gp [prompt]\" : Creates an image based on an entered prompt.")
 
     elif command == "gu": # generate random art image - returns a unique prompt
         ret[0] = 1
