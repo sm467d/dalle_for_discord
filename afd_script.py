@@ -1,9 +1,11 @@
 import discord
 import openai
+from io import BytesIO
+import requests
 from discord.ext import commands
 
-tkn = "TOKEN"
-openai.api_key = "KEY"
+tkn = "tkn"
+openai.api_key = "key"
 client = discord.Client(intents=discord.Intents.all())
 commands = {
     "help": "shows all commands",
@@ -53,9 +55,15 @@ def get_image(prompt):
     Returns:
         image (discord.File): the image file
     '''
-    response = openai.Image.create(prompt=prompt, model="image-alpha-001")
-    url = response.data.url
-    image = discord.File(url)
+    response = openai.Image.create(
+        prompt=prompt,
+        size="1024x1024", 
+        response_format="url"
+        )
+    
+    image_url = response['data'][0]["url"]
+    image_data = requests.get(image_url).content
+    image = discord.File(BytesIO(image_data), filename='image.jpg')
     return image
 
     
@@ -75,7 +83,7 @@ async def on_message(message):
             await message.channel.send(ret[1])
         else:
             image = get_image(ret[1])
-            await message.channel.send(image)
+            await message.channel.send(ret[1],file=image)
 
 
 client.run(tkn)
