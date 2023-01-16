@@ -4,8 +4,8 @@ from io import BytesIO
 import requests
 from discord.ext import commands
 
-tkn = "tkn"
-openai.api_key = "key"
+tkn = "TOKEN"
+openai.api_key = "KEY"
 client = discord.Client(intents=discord.Intents.all())
 commands = {
     "help": "shows all commands",
@@ -33,7 +33,8 @@ def process_command(content):
 
     elif command == "gu": # generate random art image - returns a unique prompt
         ret[0] = 1
-        ret.append(openai.Prompt.create(model="text-davinci-002", temperature=1.0).choices[0].text)
+        ret.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image caption \
+            that doubles as a DALLE prompt", temperature=1.0, max_tokens=100).choices[0].text)
 
     elif command.startswith("gp"): # generate img based on prompt - returns user prompt
         ret[0] = 1
