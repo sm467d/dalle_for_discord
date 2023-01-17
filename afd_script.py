@@ -5,11 +5,11 @@ from io import BytesIO
 import requests
 from discord.ext import commands
 
-tkn = os.environ.get('bot_token')
-openai.api_key = os.environ.get('openai_key')
+tkn = "TKN"
+openai.api_key = "KEY"
 client = discord.Client(intents=discord.Intents.all())
 
-def process_command(content):
+def process_command(message):
     '''
     Processes user commands that begin with "!afd"
 
@@ -22,6 +22,7 @@ def process_command(content):
                     ret[0] == 2: has image, image ret[1]
         
     '''
+    content = message.content
     command = content.lstrip("!afd ")
     ret = [0]
 
@@ -33,14 +34,17 @@ def process_command(content):
     elif command == "gen-u": # generate random art image - returns a unique prompt
         ret[0] = 1
         ret.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image caption \
-            that doubles as a DALLE prompt", temperature=1.0, max_tokens=100).choices[0].text)
+            that doubles as a DALLE prompt", temperature=0.7, max_tokens=100).choices[0].text)
 
     elif command.startswith("gen-p"): # generate img based on prompt - returns user prompt
         ret[0] = 1
         ret.append(command.lstrip("gen-p "))
         
     elif command.startswith("caption"):
-        
+        if message.attachments:
+            image_url = message.attachments[0].url
+        ret[0] == 2
+        ret.append(image_url)
       
     else: # command not recognized
         ret.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!afd help\" for a list of all commands.")
@@ -62,20 +66,27 @@ def get_image(prompt):
     response = openai.Image.create(
         prompt=prompt,
         size="1024x1024", 
-        response_format="url"
+        response_format="url",
         )
     
     image_url = response['data'][0]["url"]
     image_data = requests.get(image_url).content
     image = discord.File(BytesIO(image_data), filename='image.jpg')
     return image
-j
+
 
 def get_caption(image_url):
     '''
     Generates a caption for an image
+
+    Args:
+        image_url (str): Discord URL for image
+    
+    Returns:
+        caption (str): Caption for image
     
     '''
+
     response = openai.Completion.create(
         prompt=("Generate a caption for this image" + image_url),
         temperature=0.5,
@@ -96,9 +107,12 @@ async def on_message(message):
     if message.author == client.user:
         return
     if message.content.startswith("!afd"): # command listener
-        ret = process_command(message.content)
+        ret = process_command(message)
+        ###
         if ret[0] == 0:
             await message.channel.send(ret[1])
+        elif ret[0] == 2:
+            await message.channel.send(get_caption(ret[1]))
         else:
             image = get_image(ret[1])
             await message.channel.send(ret[1],file=image)
