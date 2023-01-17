@@ -33,17 +33,16 @@ def process_command(message):
 
     elif command == "gen-u": # generate random art image - returns a unique prompt
         ret[0] = 1
-        ret.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image caption \
-            that doubles as a DALLE prompt", temperature=0.7, max_tokens=100).choices[0].text)
+        ret.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image \
+            generation prompt", temperature=0.7, max_tokens=100).choices[0].text)
 
     elif command.startswith("gen-p"): # generate img based on prompt - returns user prompt
         ret[0] = 1
         ret.append(command.lstrip("gen-p "))
         
     elif command.startswith("caption"):
-        if message.attachments:
-            image_url = message.attachments[0].url
-        ret[0] == 2
+        ret[0] = 2
+        image_url = message.attachments[0].url
         ret.append(image_url)
       
     else: # command not recognized
@@ -88,6 +87,7 @@ def get_caption(image_url):
     '''
 
     response = openai.Completion.create(
+        model = "text-davinci-002",
         prompt=("Generate a caption for this image" + image_url),
         temperature=0.5,
         max_tokens = 100
