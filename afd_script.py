@@ -2,17 +2,19 @@ import discord
 import json
 import openai
 import os
-from io import BytesIO
 import requests
+from io import BytesIO
 from discord.ext import commands
 
+# Loading token and key
 with open("config.json") as json_file:
     data = json.load(json_file)
-
 tkn = data["token"]
 openai.api_key = data["key"]
 
+# Intent Declaration
 client = discord.Client(intents=discord.Intents.all())
+
 
 def process_command(message):
     '''
@@ -22,17 +24,25 @@ def process_command(message):
         message.content (str): full command
 
     Returns:
-        ret (list): ret[0] == 0: no prompt, message ret[1]
-                    ret[0] == 1: has prompt, prompt ret[1]
-                    ret[0] == 2: has image, image ret[1]
+        ret (list): ret[0] = operation, ret[1] = operand
+            Codes:
+                ret[0] == 0: 
+                    operation: Send ret[1] to message channel
+                    operand: Message
+
+                ret[0] == 1: 
+                    operation: Generate image based on prompt
+                    operand: Prompt
+
+                ret[0] == 2: Has image, image ret[1]
+                    operation: Generate caption based on image
+                    operand: Image 
         
     '''
-    content = message.content
-    command = content.lstrip("!d ")
-    ret = [0]
+    command = message.content.lstrip("!d ")
+    ret = [0] # ret[0] signals how to operate return and operand (ret[1])
 
     if command in ("help", "?"):
-        # ret.append(EMBED)
         embed = discord.Embed(title="Commands",
         color=0xeee657)
         commands = [("!d help", "Displays all my secrets"), ("!d gen-p [prompt]",
@@ -51,7 +61,7 @@ def process_command(message):
 
     elif command.startswith("gen-p"): # generate img based on prompt - returns user prompt
         ret[0] = 1
-        ret.append(command.lstrip("gen-p "))
+        ret.append(command.lstrip("gen-p ")) # ret[1] = user prompt
         
     elif command.startswith("caption"):
         ret[0] = 2
@@ -120,11 +130,13 @@ async def on_message(message):
         return
     if message.content.startswith("!d"): # command listener
         ret = process_command(message)
-        ###
-        if ret[0] == 0:
+
+        if ret[0] == 0: # if help
             await message.channel.send(embed=ret[1])
-        elif ret[0] == 2:
+
+        elif ret[0] == 2: # if caption
             await message.channel.send(get_caption(ret[1]))
+            
         else:
             image_url = get_image(ret[1])
             image_data = requests.get(image_url).content
