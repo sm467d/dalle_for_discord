@@ -32,14 +32,22 @@ def process_command(message):
     ret = [0]
 
     if command in ("help", "?"):
-        ret.append("Apollo DALL-E Commands (!d [command]):\n\t\"gen-u\" : Generates a unique image using an AI generated prompt\
-            \n\t\"gen-p [prompt]\" : Creates an image based on an entered prompt.\
-                \n\tcaption [image]: Generates a caption for an image.")
+        # ret.append(EMBED)
+        embed = discord.Embed(title="Commands",
+        color=0xeee657)
+        commands = [("!d help", "Displays all my secrets"), ("!d gen-p [prompt]",
+            "Generates an image based on prompt input (check !d rules) for guidelines"),
+            ("!d gen-u", "Generates a special image just for your mom."),
+            ("!d caption [image]", "Generates a caption for your oh-so-precious picture.")]
+        for name, value in commands:
+            embed.add_field(name=name, value=value, inline=False)
+        ret.append(embed)
+
 
     elif command == "gen-u": # generate random art image - returns a unique prompt
         ret[0] = 1
         ret.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image \
-            generation prompt", temperature=0.7, max_tokens=100).choices[0].text)
+            generation prompt", temperature=0.5, max_tokens=100).choices[0].text)
 
     elif command.startswith("gen-p"): # generate img based on prompt - returns user prompt
         ret[0] = 1
@@ -114,7 +122,7 @@ async def on_message(message):
         ret = process_command(message)
         ###
         if ret[0] == 0:
-            await message.channel.send(ret[1])
+            await message.channel.send(embed=ret[1])
         elif ret[0] == 2:
             await message.channel.send(get_caption(ret[1]))
         else:
