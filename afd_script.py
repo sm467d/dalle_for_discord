@@ -1,17 +1,22 @@
 import discord
+import json
 import openai
 import os
 from io import BytesIO
 import requests
 from discord.ext import commands
 
-tkn = "TKN"
-openai.api_key = "KEY"
+with open("config.json") as json_file:
+    data = json.load(json_file)
+
+tkn = data["token"]
+openai.api_key = data["key"]
+
 client = discord.Client(intents=discord.Intents.all())
 
 def process_command(message):
     '''
-    Processes user commands that begin with "!afd"
+    Processes user commands that begin with "!d"
 
     Args: 
         message.content (str): full command
@@ -23,11 +28,11 @@ def process_command(message):
         
     '''
     content = message.content
-    command = content.lstrip("!afd ")
+    command = content.lstrip("!d ")
     ret = [0]
 
     if command in ("help", "?"):
-        ret.append("Apollo DALL-E Commands (!afd [command]):\n\t\"gen-u\" : Generates a unique image using an AI generated prompt\
+        ret.append("Apollo DALL-E Commands (!d [command]):\n\t\"gen-u\" : Generates a unique image using an AI generated prompt\
             \n\t\"gen-p [prompt]\" : Creates an image based on an entered prompt.\
                 \n\tcaption [image]: Generates a caption for an image.")
 
@@ -46,7 +51,7 @@ def process_command(message):
         ret.append(image_url)
       
     else: # command not recognized
-        ret.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!afd help\" for a list of all commands.")
+        ret.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!d help\" for a list of all commands.")
     
     return ret
 
@@ -69,9 +74,8 @@ def get_image(prompt):
         )
     
     image_url = response['data'][0]["url"]
-    image_data = requests.get(image_url).content
-    image = discord.File(BytesIO(image_data), filename='image.jpg')
-    return image
+
+    return image_url
 
 
 def get_caption(image_url):
@@ -94,8 +98,8 @@ def get_caption(image_url):
     )
     caption = response.choices[0].text
     return caption
-    
-    
+
+
 @client.event
 async def on_ready():
     await client.change_presence(status=discord.Status.online)
@@ -106,7 +110,7 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.content.startswith("!afd"): # command listener
+    if message.content.startswith("!d"): # command listener
         ret = process_command(message)
         ###
         if ret[0] == 0:
@@ -114,8 +118,10 @@ async def on_message(message):
         elif ret[0] == 2:
             await message.channel.send(get_caption(ret[1]))
         else:
-            image = get_image(ret[1])
-            await message.channel.send(ret[1],file=image)
+            image_url = get_image(ret[1])
+            image_data = requests.get(image_url).content
+            image = discord.File(BytesIO(image_data), filename='image.jpg')
+            await message.channel.send(get_caption(image_url),file=image)
 
 
 client.run(tkn)
