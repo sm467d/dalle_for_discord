@@ -24,54 +24,43 @@ def process_command(message):
         message.content (str): full command
 
     Returns:
-        ret (list): ret[0] = operation, ret[1] = operand
+        signal (list): signal[0] = operation, signal[1] = operand
             Codes:
-                ret[0] == 0: 
-                    operation: Send ret[1] to message channel
+                signal[0] == 0: 
+                    operation: Send signal[1] to message channel
                     operand: Message
 
-                ret[0] == 1: 
+                signal[0] == 1: 
                     operation: Generate image based on prompt
                     operand: Prompt
-
-                ret[0] == 2: Has image, image ret[1]
-                    operation: Generate caption based on image
-                    operand: Image 
-        
     '''
     command = message.content.lstrip("!d ")
-    ret = [0] # ret[0] signals how to operate return and operand (ret[1])
+    signal = [0] # signal[0] signals how to operate return and operand (signal[1])
 
     if command in ("help", "?"):
         embed = discord.Embed(title="Commands",
         color=0xeee657)
         commands = [("!d help", "Displays all my secrets"), ("!d gen-p [prompt]",
             "Generates an image based on prompt input (check !d rules) for guidelines"),
-            ("!d gen-u", "Generates a special image just for your mom."),
-            ("!d caption [image]", "Generates a caption for your oh-so-precious picture.")]
+            ("!d gen-u", "Generates a special image just for your mom.")]
         for name, value in commands:
             embed.add_field(name=name, value=value, inline=False)
-        ret.append(embed)
+        signal.append(embed)
 
 
     elif command == "gen-u": # generate random art image - returns a unique prompt
-        ret[0] = 1
-        ret.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image \
+        signal[0] = 1
+        signal.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image \
             generation prompt", temperature=0.5, max_tokens=100).choices[0].text)
 
     elif command.startswith("gen-p"): # generate img based on prompt - returns user prompt
-        ret[0] = 1
-        ret.append(command.lstrip("gen-p ")) # ret[1] = user prompt
-        
-    elif command.startswith("caption"):
-        ret[0] = 2
-        image_url = message.attachments[0].url
-        ret.append(image_url)
+        signal[0] = 1
+        signal.append(command.lstrip("gen-p ")) # signal[1] = user prompt
       
     else: # command not recognized
-        ret.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!d help\" for a list of all commands.")
+        signal.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!d help\" for a list of all commands.")
     
-    return ret
+    return signal
 
 
 def get_image(prompt):
@@ -96,28 +85,6 @@ def get_image(prompt):
     return image_url
 
 
-def get_caption(image_url):
-    '''
-    Generates a caption for an image
-
-    Args:
-        image_url (str): Discord URL for image
-    
-    Returns:
-        caption (str): Caption for image
-    
-    '''
-
-    response = openai.Completion.create(
-        model = "text-davinci-002",
-        prompt=("Generate a caption for this image" + image_url),
-        temperature=0.5,
-        max_tokens = 100
-    )
-    caption = response.choices[0].text
-    return caption
-
-
 @client.event
 async def on_ready():
     await client.change_presence(status=discord.Status.online)
@@ -129,19 +96,16 @@ async def on_message(message):
     if message.author == client.user:
         return
     if message.content.startswith("!d"): # command listener
-        ret = process_command(message)
+        signal = process_command(message)
 
-        if ret[0] == 0: # if help
-            await message.channel.send(embed=ret[1])
-
-        elif ret[0] == 2: # if caption
-            await message.channel.send(get_caption(ret[1]))
+        if signal[0] == 0: # if help
+            await message.channel.send(embed=signal[1])
             
         else:
-            image_url = get_image(ret[1])
+            image_url = get_image(signal[1])
             image_data = requests.get(image_url).content
             image = discord.File(BytesIO(image_data), filename='image.jpg')
-            await message.channel.send(get_caption(image_url),file=image)
+            await message.channel.send(signal[1], file=image)
 
 
 client.run(tkn)
