@@ -18,7 +18,7 @@ client = discord.Client(intents=discord.Intents.all())
 
 def process_command(message):
     '''
-    Processes user commands that begin with "!d"
+    Processes user commands that begin with "!"
 
     Args: 
         message.content (str): full command
@@ -34,15 +34,15 @@ def process_command(message):
                     operation: Generate image based on prompt
                     operand: Prompt
     '''
-    command = message.content.lstrip("!d ")
+    command = message.content.lstrip("!")
     signal = [0] # signal[0] signals how to operate return and operand (signal[1])
 
-    if command in ("help", "?"):
+    if command in ("help", "help "):
         embed = discord.Embed(title="Commands",
         color=0xeee657)
-        commands = [("!d help", "Displays all my secrets"), ("!d gen-p [prompt]",
-            "Generates an image based on prompt input (check !d rules) for guidelines"),
-            ("!d gen-u", "Generates a special image just for your mom.")]
+        commands = [("!gen-p [prompt]",
+            "Generates an image based on prompt input (check !rules) for guidelines."),
+            ("!gen-u", "Generates a special image just for your mom.")]
         for name, value in commands:
             embed.add_field(name=name, value=value, inline=False)
         signal.append(embed)
@@ -58,7 +58,7 @@ def process_command(message):
         signal.append(command.lstrip("gen-p ")) # signal[1] = user prompt
       
     else: # command not recognized
-        signal.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!d help\" for a list of all commands.")
+        signal.append("Sorry, I couldn't recognize your command. Please check your message or enter \"!help\".")
     
     return signal
 
@@ -95,17 +95,24 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.content.startswith("!d"): # command listener
+    if message.content.startswith("!"): # command listener
         signal = process_command(message)
 
         if signal[0] == 0: # if help
-            await message.channel.send(embed=signal[1])
+            if type(signal[1]) == str:
+                await message.channel.send(signal[1])
+            else:
+                await message.channel.send(embed=signal[1])
+            
+            
             
         else:
             image_url = get_image(signal[1])
-            image_data = requests.get(image_url).content
-            image = discord.File(BytesIO(image_data), filename='image.jpg')
-            await message.channel.send(signal[1], file=image)
 
+            embed = discord.Embed(title=signal[1],
+            color=discord.Colour(0x03b1fc))
+            embed.set_image(url=image_url)
+
+            await message.channel.send(embed=embed)
 
 client.run(tkn)
