@@ -41,7 +41,7 @@ def process_command(message):
         embed = discord.Embed(title="Commands",
         color=0xeee657)
         commands = [("!gen-p [prompt]",
-            "Generates an image based on prompt input (check !rules) for guidelines."),
+            "Generates an image based on prompt input."),
             ("!gen-u", "Generates a special image just for your mom.")]
         for name, value in commands:
             embed.add_field(name=name, value=value, inline=False)
@@ -51,7 +51,7 @@ def process_command(message):
     elif command == "gen-u": # generate random art image - returns a unique prompt
         signal[0] = 1
         signal.append(openai.Completion.create(model="text-davinci-003", prompt="Generate a short, extremely unique and creative image \
-            generation prompt", temperature=0.5, max_tokens=100).choices[0].text)
+            generation prompt", temperature=0.7, max_tokens=100).choices[0].text)
 
     elif command.startswith("gen-p"): # generate img based on prompt - returns user prompt
         signal[0] = 1
