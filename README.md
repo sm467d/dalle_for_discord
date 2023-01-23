@@ -1,5 +1,6 @@
 # kyma_apollo
-DALL-E for Discord!
+Very simple implementation of DALL-E for Discord!
 Features:
-  * Unique image generation
-  * Prompted image generation
+  * Unique image generation ("gen-u")
+  * Prompted image generation (!imagine [prompt])
+
